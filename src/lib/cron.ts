@@ -1,31 +1,37 @@
 import cron from "node-cron";
 import { Client } from "@xmtp/xmtp-js";
 import { RedisClientType } from "@redis/client";
+import { fetchSpeakers } from "./eventapi.js";
 
 export async function startCron(
   redisClient: RedisClientType,
   v2client: Client
 ) {
-  console.log("Starting daily cron");
+  console.log("Starting cron job to send upcoming speaker events");
   const conversations = await v2client.conversations.list();
   cron.schedule(
-    "0 0 * * *", // Daily or every 5 seconds in debug mode
+    "*/10 * * * * *", // Every 10 seconds
     async () => {
       const keys = await redisClient.keys("*");
-      console.log(`Running daily task. ${keys.length} subscribers.`);
+      console.log(`Running task. ${keys.length} subscribers.`);
+      const speakers = await fetchSpeakers();
+      const speakerInfo = speakers
+        .map(
+          (speaker: any) =>
+            `Name: ${speaker.name}\nBiography: ${speaker.biography}\nAvatar: ${speaker.avatar}\n---\n`
+        )
+        .join("");
       for (const address of keys) {
         const subscriptionStatus = await redisClient.get(address);
         if (subscriptionStatus === "subscribed") {
-          console.log(`Sending daily update to ${address}`);
-          // Logic to send daily updates to each subscriber
+          console.log(`Sending speaker updates to ${address}`);
           const targetConversation = conversations.find(
             (conv) => conv.peerAddress === address
           );
           if (targetConversation) {
             await targetConversation.send(
-              "A new daily Wordle is out! Play it now:"
+              "Check out the latest speaker updates:\n\n" + speakerInfo
             );
-            await targetConversation.send("https://framedl.xyz/");
           }
         }
       }

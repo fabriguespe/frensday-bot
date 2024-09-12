@@ -4,7 +4,7 @@ import { startCron } from "./lib/cron.js";
 import { getRedisClient } from "./lib/redis.js";
 import { xmtpClient } from "@xmtp/message-kit";
 import { RedisClientType } from "@redis/client";
-
+import { fetchSpeakers } from "./lib/eventapi.js";
 const inMemoryCacheStep = new Map<string, number>();
 const stopWords = ["stop", "unsubscribe", "cancel", "list"];
 
@@ -19,14 +19,6 @@ const commandHandlers = {
   "/games": handleGames,
   "/tech": handleTech,
 };
-
-async function fetchSpeakers() {
-  const response = await fetch(
-    "https://talks.ens.day/api/events/frensday-2024/speakers/"
-  );
-  const data = await response.json();
-  return (data as any).results;
-}
 
 run(
   async (context: HandlerContext) => {
