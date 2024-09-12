@@ -1,10 +1,15 @@
-import { Redis } from "@upstash/redis";
+import { createClient } from "@redis/client";
+import { RedisClientType } from "@redis/client";
 
-export const getRedisClient = (): Redis => {
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+export const getRedisClient = async () => {
+  const client = createClient({
+    url: process.env.REDIS_CONNECTION_STRING,
   });
 
-  return redis;
+  client.on("error", (err) => {
+    console.error("Redis client error:", err);
+  });
+
+  await client.connect();
+  return client as RedisClientType;
 };

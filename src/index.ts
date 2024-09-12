@@ -1,39 +1,23 @@
 import { run, HandlerContext } from "@xmtp/message-kit";
-import { CurrentStep } from "./lib/types.js";
-import {
-  BET_AMOUNT_ERROR_REPLY,
-  BET_AMOUNT_REPLY,
-  BET_MESSAGE_REPLY,
-  BET_OPTIONS_ERROR_REPLY,
-  BET_OPTIONS_REPLY,
-  BET_CREATE_REPLY,
-  BET_LIST_REPLY,
-  NO_PENDING_BETS_ERROR,
-  BET_RECAP_REPLY,
-} from "./lib/constants.js";
-import { v4 as uuidv4 } from "uuid";
-import { getRedisClient } from "./lib/redis.js";
 import { commands } from "./commands.js";
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
-import { BETBOT_ABI } from "./abi/index.js";
-import { handleCointossCommand } from "./handlers/agent.js";
-import { handleBetCreation } from "./handlers/bet.js";
-// track conversation steps
-const inMemoryCacheStep = new Map<string, CurrentStep>();
+import { startCron } from "./lib/cron.js";
+import { getRedisClient } from "./lib/redis.js";
+import { xmtpClient } from "@xmtp/message-kit";
+import { RedisClientType } from "@redis/client";
 
-const isStopMessage = (message: string) => {
-  const stopMessages = ["stop", "cancel", "exit", "quit", "restart", "reset"];
-  return stopMessages.includes(message.toLowerCase());
-};
+const inMemoryCacheStep = new Map<string, number>();
+const stopWords = ["stop", "unsubscribe", "cancel", "list"];
 
-const handleStopMessage = async (context: HandlerContext, sender: string) => {
-  inMemoryCacheStep.delete(sender);
-  await context.send(BET_MESSAGE_REPLY);
-};
+const redisClient: RedisClientType = await getRedisClient();
+const { v2client } = await xmtpClient();
+startCron(redisClient, v2client);
 
 const commandHandlers = {
-  "/bet": handleBetCreation,
+  "/speakers": handleSpeakers,
+  "/schedule": handleSchedule,
+  "/food": handleFood,
+  "/games": handleGames,
+  "/tech": handleTech,
 };
 
 async function fetchSpeakers() {
@@ -52,26 +36,139 @@ run(
         typeId,
         sender,
       },
-      group,
     } = context;
     if (typeId !== "text") return;
-
-    if (isStopMessage(text)) {
-      await handleStopMessage(context, sender.address);
+    const lowerContent = text?.toLowerCase();
+    if (lowerContent.startsWith("/")) {
+      context.intent(text);
       return;
     }
-    const speakers = await fetchSpeakers();
-    let speakerInfo = "";
-    speakers.forEach((speaker: any) => {
-      speakerInfo += `Name: ${speaker.name}\n`;
-      speakerInfo += `Biography: ${speaker.biography}\n`;
-      speakerInfo += `Avatar: ${speaker.avatar}\n`;
-      speakerInfo += "---\n";
-    });
-    await context.send(speakerInfo);
+    // Handles unsubscribe and resets step
+    if (stopWords.some((word) => lowerContent.includes(word))) {
+      inMemoryCacheStep.set(sender.address, 0);
+      await redisClient.del(sender.address);
+      await context.send(
+        "You are now unsubscribed. You will no longer receive updates!"
+      );
+      return;
+    }
+
+    const cacheStep = inMemoryCacheStep.get(sender.address) || 0;
+    let message = "";
+
+    if (cacheStep === 0) {
+      await handleIntro(context);
+      inMemoryCacheStep.set(sender.address, cacheStep + 1);
+    } else if (cacheStep === 1) {
+      switch (text) {
+        case "1":
+          await handleSpeakers(context);
+          break;
+        case "2":
+          await handleSchedule(context);
+          break;
+        case "3":
+          await handleFood(context);
+          break;
+        case "4":
+          await handleGames(context);
+          break;
+        case "5":
+          await handleTech(context);
+          break;
+        case "6":
+          await redisClient.set(sender.address, "subscribed");
+          message =
+            "You are now subscribed. You will receive updates.\ntype 'stop' to unsubscribe";
+          inMemoryCacheStep.set(sender.address, 0);
+          break;
+        case "7":
+          await redisClient.del(sender.address);
+          message =
+            "You are now unsubscribed. You will no longer receive updates!";
+          inMemoryCacheStep.set(sender.address, 0);
+          break;
+        default:
+          message = "Invalid option. Please choose a number from 1 to 7.";
+      }
+    } else {
+      message = "Invalid option. Please start again.";
+      inMemoryCacheStep.set(sender.address, 0);
+    }
+
+    if (message) {
+      await context.send(message);
+    }
   },
   {
     commandHandlers: commandHandlers,
     commands: commands,
   }
 );
+
+export async function handleIntro(context: HandlerContext) {
+  const introMessage = `Welcome to the ENS Conference! I'm Earl, your Leader Energy.\n
+Here are the things you can learn about:\n
+1. Speakers: Learn about the speakers
+2. Schedule: Check today's schedule
+3. Food: Get details about food and beverages
+4. Games: Find out about fun activities
+5. Tech: Discover technical topics
+6. Subscribe: Subscribe to updates
+7. Unsubscribe: Unsubscribe from updates
+`;
+  await context.send(introMessage);
+}
+
+export async function handleSpeakers(context: HandlerContext) {
+  const introMessage =
+    "Hi, I'm Li Li, your Technical Topics Liaison. Here are the speakers for today:\n";
+  const speakers = await fetchSpeakers();
+  let speakerInfo = "";
+  speakers.forEach((speaker: any) => {
+    speakerInfo += `Name: ${speaker.name}\n`;
+    speakerInfo += `Biography: ${speaker.biography}\n`;
+    speakerInfo += `Avatar: ${speaker.avatar}\n`;
+    speakerInfo += "---\n";
+  });
+  await context.send(introMessage + speakerInfo);
+}
+
+export async function handleSchedule(context: HandlerContext) {
+  const scheduleMessage = `Hi, I'm Kuzco, your Schedule Sherpa. Here is today's schedule:\n
+- 10:00 AM: Opening Ceremony
+- 11:00 AM: Keynote Speaker
+- 12:00 PM: Lunch Break
+- 2:00 PM: Panel Discussion
+- 4:00 PM: Workshops
+- 6:00 PM: Closing Remarks
+`;
+  await context.send(scheduleMessage);
+}
+
+export async function handleFood(context: HandlerContext) {
+  const foodMessage = `Hey there, I'm Peanut, the Gourmand. Here are the food and beverage details:\n
+- Lunch at 12 PM: Sandwiches, Salads, Desserts
+- Coffee Hour at 3 PM
+- Happy Hour Drinks at 5 PM
+`;
+  await context.send(foodMessage);
+}
+
+export async function handleGames(context: HandlerContext) {
+  const gamesMessage = `Hi, I'm Bittu, the Games Master. Here are the fun activities for today:\n
+- Mini POAP Quests throughout the day
+- Swag available at the registration desk
+- Join the fun activities announced here
+`;
+  await context.send(gamesMessage);
+}
+
+export async function handleTech(context: HandlerContext) {
+  const techMessage = `Hello, I'm Li Li, your Technical Topics Liaison. Here are the technical topics for today:\n
+- Learn about the topics being discussed
+- Meet the panelists and speakers
+- Discover more about ENS as a protocol
+`;
+  await context.send(techMessage);
+}

@@ -1,12 +1,3 @@
-# 🤖 cointoss
+# 🤖 frENS Day
 
-message `coin-toss.eth`
-
-Here are the commands you can use:
-
-```
-/bet create - Create a new bet
-/bet list - List all pending bets
-/bet help - Show this help message
-@cointoss - Use natural language
-```
+message `0x8AE4950C3d495d6887F94993b46142faDc515e15`
