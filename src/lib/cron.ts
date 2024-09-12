@@ -10,7 +10,8 @@ export async function startCron(
   console.log("Starting cron job to send upcoming speaker events");
   const conversations = await v2client.conversations.list();
   cron.schedule(
-    "*/10 * * * * *", // Every 10 seconds
+    /*Every 5 miutes*/ "*/5 * * * *",
+
     async () => {
       const keys = await redisClient.keys("*");
       console.log(`Running task. ${keys.length} subscribers.`);

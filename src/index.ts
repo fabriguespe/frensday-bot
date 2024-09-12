@@ -6,7 +6,7 @@ import { xmtpClient } from "@xmtp/message-kit";
 import { RedisClientType } from "@redis/client";
 import { fetchSpeakers } from "./lib/eventapi.js";
 const inMemoryCacheStep = new Map<string, number>();
-const stopWords = ["stop", "unsubscribe", "cancel", "list"];
+const stopWords = ["cancel", "reset"];
 
 const redisClient: RedisClientType = await getRedisClient();
 const { v2client } = await xmtpClient();
@@ -31,17 +31,12 @@ run(
     } = context;
     if (typeId !== "text") return;
     const lowerContent = text?.toLowerCase();
-    if (lowerContent.startsWith("/")) {
-      context.intent(text);
-      return;
-    }
-    // Handles unsubscribe and resets step
     if (stopWords.some((word) => lowerContent.includes(word))) {
       inMemoryCacheStep.set(sender.address, 0);
-      await redisClient.del(sender.address);
-      await context.send(
-        "You are now unsubscribed. You will no longer receive updates!"
-      );
+      return;
+    }
+    if (lowerContent.startsWith("/")) {
+      context.intent(text);
       return;
     }
 
@@ -75,6 +70,8 @@ run(
           inMemoryCacheStep.set(sender.address, 0);
           break;
         case "7":
+        case "unsubscribe":
+        case "stop":
           await redisClient.del(sender.address);
           message =
             "You are now unsubscribed. You will no longer receive updates!";
