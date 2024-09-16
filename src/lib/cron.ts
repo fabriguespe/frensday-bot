@@ -25,6 +25,14 @@ export async function startCron(
 ) {
   console.log("Starting cron job to send upcoming speaker events");
   const conversations = await v2client.conversations.list();
+  // Ensure speakers file exists or create it for the first time
+  try {
+    await fs.access(SPEAKERS_FILE_PATH);
+    console.log("Speakers file already exists.");
+  } catch (error) {
+    console.log("Speakers file doesn't exist. Creating it for the first time.");
+    await saveSpeakersToFile();
+  }
 
   // Cron job to fetch and save speakers every 10 minutes
   cron.schedule("*/10 * * * *", async () => {
