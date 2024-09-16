@@ -5,6 +5,8 @@ import { getRedisClient } from "./lib/redis.js";
 import { xmtpClient } from "@xmtp/message-kit";
 import { RedisClientType } from "@redis/client";
 import { fetchSpeakers } from "./lib/eventapi.js";
+import { handleAgent } from "./handlers/agent.js";
+
 const inMemoryCacheStep = new Map<string, number>();
 const stopWords = ["cancel", "reset"];
 
@@ -39,7 +41,10 @@ run(
       context.intent(text);
       return;
     }
-
+    if (text) {
+      await handleAgent(context);
+      return;
+    }
     const cacheStep = inMemoryCacheStep.get(sender.address) || 0;
     let message = "";
 
@@ -113,14 +118,7 @@ export async function handleSpeakers(context: HandlerContext) {
   const introMessage =
     "Hi, I'm Li Li, your Technical Topics Liaison. Here are the speakers for today:\n";
   const speakers = await fetchSpeakers();
-  let speakerInfo = "";
-  speakers.forEach((speaker: any) => {
-    speakerInfo += `Name: ${speaker.name}\n`;
-    speakerInfo += `Biography: ${speaker.biography}\n`;
-    speakerInfo += `Avatar: ${speaker.avatar}\n`;
-    speakerInfo += "---\n";
-  });
-  await context.send(introMessage + speakerInfo);
+  await context.send(introMessage + speakers);
 }
 
 export async function handleSchedule(context: HandlerContext) {

@@ -3,5 +3,11 @@ export async function fetchSpeakers() {
     "https://talks.ens.day/api/events/frensday-2024/speakers/"
   );
   const data = await response.json();
-  return (data as any).results;
+  const speakerInfo = (data as any).results
+    .map(
+      (speaker: any) =>
+        `Name: ${speaker.name}\nBiography: ${speaker.biography}\nAvatar: ${speaker.avatar}\n---\n`
+    )
+    .join("");
+  return "# Event Speakers:\n" + speakerInfo;
 }
