@@ -23,8 +23,14 @@ export async function handleAgent(context: HandlerContext) {
       console.log("userPrompt", userPrompt);
     }
     const { reply } = await textGeneration(userPrompt, systemPrompt);
-    console.log("reply", reply);
-    context.intent(reply);
+    // Clean markdown formatting
+    const cleanedReply = reply
+      .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
+      .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
+      .replace(/`([^`]+)`/g, "$1"); // Remove inline code
+
+    context.intent(cleanedReply);
   } catch (error) {
     console.error("Error during OpenAI call:", error);
     await context.reply("An error occurred while processing your request.");
@@ -35,12 +41,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function generateSystemPrompt(context: HandlerContext) {
-  const filePath = path.resolve(__dirname, "../../src/handlers/kuzco.md");
+  const filePath = path.resolve(__dirname, "../../src/characters/kuzco.md");
   const speakersFilePath = path.resolve(
     __dirname,
-    "../../src/handlers/speakers.md"
+    "../../src/data/speakers.md"
   );
   const systemPrompt = fs.readFileSync(filePath, "utf8");
   const speakers = fs.readFileSync(speakersFilePath, "utf8");
-  return systemPrompt + speakers;
+
+  return systemPrompt + "\n\n" + speakers;
 }

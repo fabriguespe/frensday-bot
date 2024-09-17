@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 const SPEAKERS_FILE_PATH = path.resolve(
   __dirname,
-  "../../src/handlers/speakers.md"
+  "../../src/data/speakers.md"
 );
 
 async function saveSpeakersToFile() {
