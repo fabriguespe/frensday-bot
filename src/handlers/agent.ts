@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-export async function handleAgent(context: HandlerContext) {
+export async function handleAgent(context: HandlerContext, name: string) {
   if (!process?.env?.OPEN_AI_API_KEY) {
     console.log("No OPEN_AI_API_KEY found in .env");
     return;
@@ -16,7 +16,15 @@ export async function handleAgent(context: HandlerContext) {
     },
   } = context;
 
-  const systemPrompt = await generateSystemPrompt(context);
+  const filePath = path.resolve(__dirname, `../../src/characters/${name}.md`);
+  const speakersFilePath = path.resolve(
+    __dirname,
+    "../../src/data/speakers.md"
+  );
+  const character = fs.readFileSync(filePath, "utf8");
+  const speakers = fs.readFileSync(speakersFilePath, "utf8");
+
+  const systemPrompt = character + "\n\n" + speakers;
   try {
     let userPrompt = params?.prompt ?? content;
     if (process?.env?.MSG_LOG === "true") {
@@ -40,14 +48,4 @@ export async function handleAgent(context: HandlerContext) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function generateSystemPrompt(context: HandlerContext) {
-  const filePath = path.resolve(__dirname, "../../src/characters/kuzco.md");
-  const speakersFilePath = path.resolve(
-    __dirname,
-    "../../src/data/speakers.md"
-  );
-  const systemPrompt = fs.readFileSync(filePath, "utf8");
-  const speakers = fs.readFileSync(speakersFilePath, "utf8");
-
-  return systemPrompt + "\n\n" + speakers;
-}
+async function generateSystemPrompt() {}

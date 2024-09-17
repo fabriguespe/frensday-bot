@@ -15,7 +15,7 @@ const redisClient: RedisClientType = await getRedisClient();
 const { v2client } = await xmtpClient({}, process.env.KEY_EARL);
 startCron(redisClient, v2client);
 
-export async function mainHandler(appConfig: Config) {
+export async function mainHandler(appConfig: Config, name: string) {
   run(async (context: HandlerContext) => {
     const {
       message: {
@@ -35,7 +35,7 @@ export async function mainHandler(appConfig: Config) {
       return;
     }
     if (text) {
-      await handleAgent(context);
+      await handleAgent(context, name);
       return;
     }
     const cacheStep = inMemoryCacheStep.get(sender.address) || 0;
