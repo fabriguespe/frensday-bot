@@ -24,7 +24,7 @@ export async function handleAgent(context: HandlerContext, name: string) {
   if (group && !content.includes("@" + name)) return;
 
   const language =
-    "# Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\n If sending an experience you must include a link in the message.\nBe aware of your timezone and sleep needs.";
+    "# Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.";
   const experiences =
     "# Experiences:\nWordle Game: https://framedl.xyz\n\n ENS Domain Tool: https://ens.steer.fun/\n\n ";
   const returnMessage =
@@ -67,18 +67,27 @@ export async function handleAgent(context: HandlerContext, name: string) {
     }
     const { reply } = await textGeneration(userPrompt, systemPrompt);
     // Clean markdown formatting
-    let splitMessages = JSON.parse(reply);
-    for (const message of splitMessages) {
-      let msg = message as string;
-      if (msg.startsWith("/")) await context.intent(msg);
-      else await context.send(msg);
+    if (reply.includes("[")) {
+      let splitMessages = JSON.parse(reply);
+      for (const message of splitMessages) {
+        let msg = message as string;
+        msg
+          .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
+          .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
+          .replace(/`([^`]+)`/g, "$1"); // Remove inline code
+        if (msg.startsWith("/")) await context.intent(msg);
+        else await context.send(msg);
+      }
+    } else {
+      const cleanedReply = reply
+        .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
+        .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
+        .replace(/`([^`]+)`/g, "$1"); // Remove inline code
+      if (cleanedReply.startsWith("/")) await context.intent(cleanedReply);
+      else await context.send(cleanedReply);
     }
-
-    const cleanedReply = reply
-      .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
-      .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
-      .replace(/`([^`]+)`/g, "$1"); // Remove inline code
   } catch (error) {
     console.error("Error during OpenAI call:", error);
     await context.reply("An error occurred while processing your request.");
