@@ -48,8 +48,10 @@ const appConfig_BITTU = {
   name: "bittu",
 };
 
-mainHandler(appConfig_KUZCO, appConfig_KUZCO.name);
-mainHandler(appConfig_PEANUT, appConfig_PEANUT.name);
-mainHandler(appConfig_LILI, appConfig_LILI.name);
-mainHandler(appConfig_EARL, appConfig_EARL.name);
-mainHandler(appConfig_BITTU, appConfig_BITTU.name);
+Promise.all([
+  mainHandler(appConfig_KUZCO, appConfig_KUZCO.name),
+  mainHandler(appConfig_PEANUT, appConfig_PEANUT.name),
+  mainHandler(appConfig_LILI, appConfig_LILI.name),
+  mainHandler(appConfig_EARL, appConfig_EARL.name),
+  mainHandler(appConfig_BITTU, appConfig_BITTU.name),
+]);

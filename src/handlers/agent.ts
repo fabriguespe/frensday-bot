@@ -4,6 +4,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export async function handleAgent(context: HandlerContext, name: string) {
   if (!process?.env?.OPEN_AI_API_KEY) {
     console.log("No OPEN_AI_API_KEY found in .env");
@@ -13,8 +16,34 @@ export async function handleAgent(context: HandlerContext, name: string) {
   const {
     message: {
       content: { content, params },
+      sender,
     },
+    group,
   } = context;
+
+  const ens = [
+    "0x840c601502C56087dA44A8176791d33f4b741aeC",
+    "0xE1f36769cfBf168d18d37D5257825E1E272ba843",
+    "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc",
+    "0x840c601502C56087dA44A8176791d33f4b741aeC",
+    "0xbef3B8277D99A7b8161C47CD82e85356D26E4429",
+    "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560",
+  ];
+  if (
+    ens.includes(sender.address) ||
+    (group && !content.includes("@" + name))
+  ) {
+    return;
+  }
+  const language =
+    "# Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\n If sending an experience you must include a link in the message.\nBe aware of your timezone and sleep needs.";
+  const experiences =
+    "# Experiences:\nWordle Game: https://framedl.xyz\n\n ENS Domain Tool: https://ens.steer.fun/\n\n ";
+  const bangkokTimezone = "Asia/Bangkok";
+  const currentTime = new Date().toLocaleString("en-US", {
+    timeZone: bangkokTimezone,
+  });
+  const timeInfo = `# Current Time\nCurrent time in Bangkok: ${currentTime}\n\n`;
 
   const filePath = path.resolve(__dirname, `../../src/characters/${name}.md`);
   const speakersFilePath = path.resolve(
@@ -24,7 +53,16 @@ export async function handleAgent(context: HandlerContext, name: string) {
   const character = fs.readFileSync(filePath, "utf8");
   const speakers = fs.readFileSync(speakersFilePath, "utf8");
 
-  const systemPrompt = character + "\n\n" + speakers;
+  const systemPrompt =
+    character +
+    "\n\n" +
+    speakers +
+    "\n\n" +
+    experiences +
+    "\n\n" +
+    language +
+    "\n\n" +
+    timeInfo;
   try {
     let userPrompt = params?.prompt ?? content;
     if (process?.env?.MSG_LOG === "true") {
@@ -44,8 +82,3 @@ export async function handleAgent(context: HandlerContext, name: string) {
     await context.reply("An error occurred while processing your request.");
   }
 }
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-async function generateSystemPrompt() {}

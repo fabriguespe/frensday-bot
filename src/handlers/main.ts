@@ -26,6 +26,7 @@ export async function mainHandler(appConfig: Config, name: string) {
     } = context;
     if (typeId !== "text") return;
     const lowerContent = text?.toLowerCase();
+    console.log(lowerContent);
     if (stopWords.some((word) => lowerContent.includes(word))) {
       inMemoryCacheStep.set(sender.address, 0);
       return;
