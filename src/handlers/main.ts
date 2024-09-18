@@ -27,14 +27,14 @@ export async function mainHandler(appConfig: Config, name: string) {
     if (typeId !== "text") return;
 
     const ens = [
-      "0x840c601502C56087dA44A8176791d33f4b741aeC",
-      "0xE1f36769cfBf168d18d37D5257825E1E272ba843",
-      "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc",
-      "0x840c601502C56087dA44A8176791d33f4b741aeC",
-      "0xbef3B8277D99A7b8161C47CD82e85356D26E4429",
-      "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560",
+      "0x840c601502C56087dA44A8176791d33f4b741aeC".toLowerCase(),
+      "0xE1f36769cfBf168d18d37D5257825E1E272ba843".toLowerCase(),
+      "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc".toLowerCase(),
+      "0x840c601502C56087dA44A8176791d33f4b741aeC".toLowerCase(),
+      "0xbef3B8277D99A7b8161C47CD82e85356D26E4429".toLowerCase(),
+      "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560".toLowerCase(),
     ];
-    if (ens.includes(sender.address)) return;
+    if (ens.includes(sender.address.toLowerCase())) return;
     const lowerContent = text?.toLowerCase();
     if (stopWords.some((word) => lowerContent.includes(word))) {
       inMemoryCacheStep.set(sender.address, 0);
