@@ -17,7 +17,7 @@ export async function textGeneration(userPrompt: string, systemPrompt: string) {
   });
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini-2024-07-18",
       messages: messages as any,
     });
     const reply = response.choices[0].message.content;

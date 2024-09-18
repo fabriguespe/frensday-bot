@@ -24,15 +24,15 @@ export async function handleAgent(context: HandlerContext, name: string) {
   if (group && !content.includes("@" + name)) return;
 
   const language =
-    "# Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.";
+    "### Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.";
   const experiences =
-    "# Experiences:\nWordle Game: https://framedl.xyz\n\n ENS Domain Tool: https://ens.steer.fun/\n\n ";
-  const returnMessage =
+    "### Experiences:\nWordle Game: https://framedl.xyz. Only send the game url when asked.\n\n ENS Domain Registration and Checking Tool: https://ens.steer.fun/. Only send the tool url when asked.\n\n ";
+  /* const returnMessage =
     "### Return message\n" +
     "Don't use markdown. Return messages in a json object The first message detailing the split. The second one you will send the command for the receiver to pay directly to the sender.\n" +
     "Example:\n" +
     '["Your repsponse here", "game url here"]';
-
+*/
   const bangkokTimezone = "Asia/Bangkok";
   const currentTime = new Date().toLocaleString("en-US", {
     timeZone: bangkokTimezone,
@@ -57,8 +57,7 @@ export async function handleAgent(context: HandlerContext, name: string) {
     language +
     "\n\n" +
     timeInfo +
-    "\n\n" +
-    returnMessage;
+    "\n\n";
 
   try {
     let userPrompt = params?.prompt ?? content;
@@ -66,7 +65,15 @@ export async function handleAgent(context: HandlerContext, name: string) {
       console.log("userPrompt", userPrompt);
     }
     const { reply } = await textGeneration(userPrompt, systemPrompt);
-    // Clean markdown formatting
+    const cleanedReply = reply
+      .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$2") // Keep URL instead of link text
+      .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
+      .replace(/`([^`]+)`/g, "$1"); // Remove inline code
+    if (cleanedReply.startsWith("/")) await context.intent(cleanedReply);
+    else await context.send(cleanedReply);
+
+    /*
     if (reply.includes("[")) {
       let splitMessages = JSON.parse(reply);
       for (const message of splitMessages) {
@@ -80,14 +87,7 @@ export async function handleAgent(context: HandlerContext, name: string) {
         else await context.send(msg);
       }
     } else {
-      const cleanedReply = reply
-        .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
-        .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
-        .replace(/`([^`]+)`/g, "$1"); // Remove inline code
-      if (cleanedReply.startsWith("/")) await context.intent(cleanedReply);
-      else await context.send(cleanedReply);
-    }
+    }*/
   } catch (error) {
     console.error("Error during OpenAI call:", error);
     await context.reply(
