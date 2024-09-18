@@ -90,6 +90,8 @@ export async function handleAgent(context: HandlerContext, name: string) {
     }
   } catch (error) {
     console.error("Error during OpenAI call:", error);
-    await context.reply("An error occurred while processing your request.");
+    await context.reply(
+      "OOps looks like something went wrong. Please call my creator to fix me."
+    );
   }
 }
