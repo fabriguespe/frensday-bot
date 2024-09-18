@@ -39,6 +39,12 @@ export async function handleAgent(context: HandlerContext, name: string) {
     "# Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\n If sending an experience you must include a link in the message.\nBe aware of your timezone and sleep needs.";
   const experiences =
     "# Experiences:\nWordle Game: https://framedl.xyz\n\n ENS Domain Tool: https://ens.steer.fun/\n\n ";
+  const returnMessage =
+    "### Return message\n" +
+    "Don't use markdown. Return messages in a json object The first message detailing the split. The second one you will send the command for the receiver to pay directly to the sender.\n" +
+    "Example:\n" +
+    '["Your repsponse here", "game url here"]';
+
   const bangkokTimezone = "Asia/Bangkok";
   const currentTime = new Date().toLocaleString("en-US", {
     timeZone: bangkokTimezone,
@@ -62,7 +68,10 @@ export async function handleAgent(context: HandlerContext, name: string) {
     "\n\n" +
     language +
     "\n\n" +
-    timeInfo;
+    timeInfo +
+    "\n\n" +
+    returnMessage;
+
   try {
     let userPrompt = params?.prompt ?? content;
     if (process?.env?.MSG_LOG === "true") {
@@ -70,13 +79,18 @@ export async function handleAgent(context: HandlerContext, name: string) {
     }
     const { reply } = await textGeneration(userPrompt, systemPrompt);
     // Clean markdown formatting
+    let splitMessages = JSON.parse(reply);
+    for (const message of splitMessages) {
+      let msg = message as string;
+      if (msg.startsWith("/")) await context.intent(msg);
+      else await context.send(msg);
+    }
+
     const cleanedReply = reply
       .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
       .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
       .replace(/`([^`]+)`/g, "$1"); // Remove inline code
-
-    context.intent(cleanedReply);
   } catch (error) {
     console.error("Error during OpenAI call:", error);
     await context.reply("An error occurred while processing your request.");
