@@ -1,3 +1,7 @@
 # 🤖 frENS Day
 
-message `0x8AE4950C3d495d6887F94993b46142faDc515e15`
+message `kuzco.converse.xyz`
+message `bittu.converse.xyz`
+message `earl.converse.xyz`
+message `peanut.converse.xyz`
+message `lili.converse.xyz`
