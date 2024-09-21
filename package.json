@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@redis/client": "^1.6.0",
-    "@xmtp/message-kit": "^0.0.18",
+    "@xmtp/message-kit": "^0.0.19",
     "dotenv": "^16.4.5",
     "node-cron": "^3.0.3",
     "openai": "^4.58.1"
