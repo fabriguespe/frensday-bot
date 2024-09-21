@@ -20,34 +20,51 @@ export async function mainHandler(appConfig: Config, name: string) {
     const {
       message: {
         content: { content: text, params },
+        content,
         typeId,
         sender,
       },
+      group,
+      getReplyChain,
     } = context;
-    if (typeId !== "text") return;
-
-    const ens = [
-      "0x840c601502C56087dA44A8176791d33f4b741aeC".toLowerCase(),
-      "0xE1f36769cfBf168d18d37D5257825E1E272ba843".toLowerCase(),
-      "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc".toLowerCase(),
-      "0x840c601502C56087dA44A8176791d33f4b741aeC".toLowerCase(),
-      "0xbef3B8277D99A7b8161C47CD82e85356D26E4429".toLowerCase(),
-      "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560".toLowerCase(),
-    ];
-    if (ens.includes(sender.address.toLowerCase())) return;
+    if (await isBot(sender.address)) return;
+    if (typeId !== "text" && typeId !== "reply") return;
     const lowerContent = text?.toLowerCase();
+
     if (stopWords.some((word) => lowerContent.includes(word))) {
       inMemoryCacheStep.set(sender.address, 0);
       return;
     }
+    console.log(text);
     if (lowerContent.startsWith("/")) {
       context.intent(text);
       return;
-    }
-    if (text) {
-      await handleAgent(context, name);
+    } else if (
+      !group ||
+      (group && typeId === "text" && text.includes("@" + name))
+    ) {
+      let userPrompt = text;
+      await handleAgent(context, userPrompt, name);
       return;
-    }
+    } else if (typeId === "reply") {
+      const { content: reply, reference } = content;
+      const { messageChain, receiverFromChain } = await getReplyChain(
+        reference
+      );
+
+      if (
+        messageChain.includes("@" + name) ||
+        (await isBot(receiverFromChain))
+      ) {
+        const botName = await getBotName(receiverFromChain);
+        console.log(botName);
+        if (!botName || botName !== name) return;
+        let userPrompt = `The following is a conversation history. \nMessage History:\n${messageChain}\nLatest reply: ${reply}`;
+        await handleAgent(context, userPrompt, botName);
+      }
+      return;
+    } else if (group) return;
+
     const cacheStep = inMemoryCacheStep.get(sender.address) || 0;
     let message = "";
 
@@ -99,6 +116,42 @@ export async function mainHandler(appConfig: Config, name: string) {
   }, appConfig);
 }
 
+const botAddresses = [
+  { name: "earl", address: "0x840c601502C56087dA44A8176791d33f4b741aeC" },
+  { name: "lili", address: "0xE1f36769cfBf168d18d37D5257825E1E272ba843" },
+  { name: "peanut", address: "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc" },
+  { name: "kuzco", address: "0xbef3B8277D99A7b8161C47CD82e85356D26E4429" },
+  { name: "bittu", address: "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560" },
+];
+const botLocalAddresses = [
+  { name: "bittu", address: "0xa1C6718567B4960380235a07c1B0793aF81B1264" },
+  { name: "lili", address: "0xFD18Eff445A32010bFB2Ab32A0F7A02CF08bAfdB" },
+  { name: "earl", address: "0xe9791cb9Db1eF92Ed0670B31ab9a9453AA7BFb4c" },
+  { name: "peanut", address: "0x839e618F3b928195b9572e3939bEF13ddF446717" },
+  { name: "kuzco", address: "0x3C348aEF831a28f80FF261B028a0A9b2491C0BA6" },
+];
+
+async function getBotName(address: string) {
+  return botLocalAddresses
+    .map((bot) => bot.address.toLowerCase())
+    .includes(address.toLowerCase())
+    ? botLocalAddresses.find(
+        (bot) => bot.address.toLowerCase() === address.toLowerCase()
+      )?.name
+    : botAddresses.find(
+        (bot) => bot.address.toLowerCase() === address.toLowerCase()
+      )?.name;
+}
+async function isBot(address: string) {
+  return (
+    botAddresses
+      .map((bot) => bot.address.toLowerCase())
+      .includes(address.toLowerCase()) ||
+    botLocalAddresses
+      .map((bot) => bot.address.toLowerCase())
+      .includes(address.toLowerCase())
+  );
+}
 export async function handleIntro(context: HandlerContext) {
   const introMessage = `Welcome to the ENS Conference! I'm Earl, your Leader Energy.\n
   Here are the things you can learn about:\n

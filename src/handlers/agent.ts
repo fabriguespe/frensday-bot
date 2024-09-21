@@ -7,7 +7,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export async function handleAgent(context: HandlerContext, name: string) {
+export async function handleAgent(
+  context: HandlerContext,
+  userPrompt: string,
+  name: string
+) {
   if (!process?.env?.OPEN_AI_API_KEY) {
     console.log("No OPEN_AI_API_KEY found in .env");
     return;
@@ -21,8 +25,40 @@ export async function handleAgent(context: HandlerContext, name: string) {
     group,
   } = context;
 
-  if (group && !content.includes("@" + name)) return;
+  try {
+    const { reply } = await textGeneration(userPrompt, getSystemPrompt(name));
+    const cleanedReply = reply
+      .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$2") // Keep URL instead of link text
+      .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
+      .replace(/`([^`]+)`/g, "$1"); // Remove inline code
+    if (cleanedReply.startsWith("/")) await context.intent(cleanedReply);
+    else await context.send(cleanedReply);
 
+    /*
+    if (reply.includes("[")) {
+      let splitMessages = JSON.parse(reply);
+      for (const message of splitMessages) {
+        let msg = message as string;
+        msg
+          .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
+          .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
+          .replace(/`([^`]+)`/g, "$1"); // Remove inline code
+        if (msg.startsWith("/")) await context.intent(msg);
+        else await context.send(msg);
+      }
+    } else {
+    }*/
+  } catch (error) {
+    console.error("Error during OpenAI call:", error);
+    await context.reply(
+      "OOps looks like something went wrong. Please call my creator to fix me."
+    );
+  }
+}
+
+function getSystemPrompt(name: string) {
   const language =
     "### Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.";
   const experiences =
@@ -59,39 +95,5 @@ export async function handleAgent(context: HandlerContext, name: string) {
     timeInfo +
     "\n\n";
 
-  try {
-    let userPrompt = params?.prompt ?? content;
-    if (process?.env?.MSG_LOG === "true") {
-      console.log("userPrompt", userPrompt);
-    }
-    const { reply } = await textGeneration(userPrompt, systemPrompt);
-    const cleanedReply = reply
-      .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$2") // Keep URL instead of link text
-      .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
-      .replace(/`([^`]+)`/g, "$1"); // Remove inline code
-    if (cleanedReply.startsWith("/")) await context.intent(cleanedReply);
-    else await context.send(cleanedReply);
-
-    /*
-    if (reply.includes("[")) {
-      let splitMessages = JSON.parse(reply);
-      for (const message of splitMessages) {
-        let msg = message as string;
-        msg
-          .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
-          .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
-          .replace(/`([^`]+)`/g, "$1"); // Remove inline code
-        if (msg.startsWith("/")) await context.intent(msg);
-        else await context.send(msg);
-      }
-    } else {
-    }*/
-  } catch (error) {
-    console.error("Error during OpenAI call:", error);
-    await context.reply(
-      "OOps looks like something went wrong. Please call my creator to fix me."
-    );
-  }
+  return systemPrompt;
 }
