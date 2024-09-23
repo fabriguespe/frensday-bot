@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+console.log(__dirname);
 export async function handleAgent(
   context: HandlerContext,
   userPrompt: string,
@@ -74,12 +74,13 @@ function getSystemPrompt(name: string) {
     timeZone: bangkokTimezone,
   });
   const timeInfo = `# Current Time\nCurrent time in Bangkok: ${currentTime}\n\n`;
-
+  console.log(__dirname, `../../src/characters/${name}.md`);
   const filePath = path.resolve(__dirname, `../../src/characters/${name}.md`);
   const speakersFilePath = path.resolve(
     __dirname,
     "../../src/data/speakers.md"
   );
+  console.log(filePath);
   const character = fs.readFileSync(filePath, "utf8");
   const speakers = fs.readFileSync(speakersFilePath, "utf8");
 
