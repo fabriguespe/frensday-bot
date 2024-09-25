@@ -116,7 +116,6 @@ export async function mainHandler(appConfig: Config, name: string) {
 
 const getBotAddress = (name: string) => {
   const isDeployed = process.env.NODE_ENV === "production";
-  console.log("isDeployed", isDeployed);
   const addressList = isDeployed ? botAddresses : botLocalAddresses;
   if (addressList) {
     return addressList.find(
@@ -137,9 +136,9 @@ async function isReplyFromBot(chain: any, userPrompt: string, name: string) {
 const botAddresses = [
   { name: "earl", address: "0x840c601502C56087dA44A8176791d33f4b741aeC" },
   { name: "lili", address: "0xE1f36769cfBf168d18d37D5257825E1E272ba843" },
-  { name: "peanut", address: "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc" },
+  { name: "bittu", address: "0xf6A5657d0409eE8188332f0d3E9348242b54c4dc" },
   { name: "kuzco", address: "0xbef3B8277D99A7b8161C47CD82e85356D26E4429" },
-  { name: "bittu", address: "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560" },
+  { name: "peanut", address: "0xc143D1b3a0Fe554dF36FbA0681f9086cf2640560" },
 ];
 const botLocalAddresses = [
   { name: "bittu", address: "0xa1C6718567B4960380235a07c1B0793aF81B1264" },
