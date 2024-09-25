@@ -36,7 +36,16 @@ export async function handleAgent(
 
 function getSystemPrompt(name: string) {
   const language =
-    "### Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.\nDont use markdown.\n If you are not sure about something, ask the user to clarify.\nOnly restrict to answer questions you know about from the docs.\nNever use speakrs names about info if not excplitly in the docs.";
+    "### Important\n" +
+    "- Keep it simple and short.\n" +
+    "- Always answer in first person.\n" +
+    "- Never mention users\n" +
+    "- Be aware of your timezone and sleep needs.\n" +
+    "- Dont use markdown.\n" +
+    "- Never mention speakers or people related to the event.\n" +
+    "- Only provide answers based on verified information. If the data or facts are unknown or unclear, respond with 'I do not know' or request further clarification from the user. " +
+    "- Do not make guesses or assumptions";
+
   const experiences =
     "### Experiences:\nWordle Game: https://framedl.xyz. Only send the game url when asked.\n\n ENS Domain Registration and Checking Tool: https://ens.steer.fun/. Only send the tool url when asked.\n\n ";
   /* const returnMessage =
@@ -49,7 +58,12 @@ function getSystemPrompt(name: string) {
   const currentTime = new Date().toLocaleString("en-US", {
     timeZone: bangkokTimezone,
   });
-  const timeInfo = `# Current Time\nCurrent time in Bangkok: ${currentTime}\n\n`;
+  const timeInfo = `# Current Time\nCurrent time in Bangkok: ${currentTime}\n\nTODAY IS ${new Date().toLocaleDateString(
+    "en-US",
+    {
+      weekday: "long",
+    }
+  )}`;
   const filePath = path.resolve(__dirname, `../../src/characters/${name}.md`);
   const speakersFilePath = path.resolve(
     __dirname,
