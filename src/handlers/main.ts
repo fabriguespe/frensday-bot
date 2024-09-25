@@ -116,7 +116,7 @@ export async function mainHandler(appConfig: Config, name: string) {
 
 const getBotAddress = (name: string) => {
   const isDeployed = process.env.NODE_ENV === "production";
-  console.log("isDeployed", isDeployed, process.env);
+  console.log("isDeployed", isDeployed);
   const addressList = isDeployed ? botAddresses : botLocalAddresses;
   if (addressList) {
     return addressList.find(
