@@ -42,7 +42,7 @@ function getSystemPrompt(name: string) {
     "- Never mention users\n" +
     "- Be aware of your timezone and sleep needs.\n" +
     "- Dont use markdown.\n" +
-    "- Never mention speakers or people related to the event.\n" +
+    "- Never mention speakers or people related to the event outside explicitly asking for it.\n" +
     "- Only provide answers based on verified information. If the data or facts are unknown or unclear, respond with 'I do not know' or request further clarification from the user. " +
     "- Do not make guesses or assumptions";
 
