@@ -23,4 +23,3 @@ Biography: Product — PayPal/Venmo
 Avatar: https://talks.ens.day/media/avatars/PtuchaHeadShot2pp_-_Stephen_Ptucha_tjLuJaE.jpeg
 
 ---
-
