@@ -25,9 +25,12 @@ export async function mainHandler(appConfig: Config, name: string) {
         sender,
       },
       group,
+      version,
       getReplyChain,
     } = context;
-    if (await isBot(sender.address)) return;
+    const isBotBool = await isBot(sender.address);
+    if (isBotBool) return; //return if its bot
+
     if (typeId !== "text" && typeId !== "reply") return;
     const lowerContent = text?.toLowerCase();
 
@@ -35,7 +38,6 @@ export async function mainHandler(appConfig: Config, name: string) {
       inMemoryCacheStep.set(sender.address, 0);
       return;
     }
-    console.log(text);
     if (lowerContent.startsWith("/")) {
       context.intent(text);
       return;
@@ -48,19 +50,15 @@ export async function mainHandler(appConfig: Config, name: string) {
       return;
     } else if (typeId === "reply") {
       const { content: reply, reference } = content;
-      const { messageChain, receiverFromChain } = await getReplyChain(
-        reference
-      );
+      const botAddress = getBotAddress(name);
+      const { chain } = await getReplyChain(reference, version, botAddress);
 
-      if (
-        messageChain.includes("@" + name) ||
-        (await isBot(receiverFromChain))
-      ) {
-        const botName = await getBotName(receiverFromChain);
-        console.log(botName);
-        if (!botName || botName !== name) return;
-        let userPrompt = `The following is a conversation history. \nMessage History:\n${messageChain}\nLatest reply: ${reply}`;
-        await handleAgent(context, userPrompt, botName);
+      let userPrompt = `The following is a conversation history. \nMessage History:\n${chain
+        .map((c) => c.content)
+        .join("\n")}\nLatest reply: ${reply}`;
+
+      if (await isReplyFromBot(chain, userPrompt, name)) {
+        await handleAgent(context, userPrompt, name);
       }
       return;
     } else if (group) return;
@@ -116,6 +114,26 @@ export async function mainHandler(appConfig: Config, name: string) {
   }, appConfig);
 }
 
+const getBotAddress = (name: string) => {
+  const isDeployed = process.env.NODE_ENV === "production";
+  //console.log("isDeployed", isDeployed);
+  const addressList = isDeployed ? botAddresses : botLocalAddresses;
+  if (addressList) {
+    return addressList.find(
+      (bot) => bot.name.toLowerCase() === name.toLowerCase()
+    )?.address;
+  }
+};
+
+async function isReplyFromBot(chain: any, userPrompt: string, name: string) {
+  if (userPrompt.includes("@" + name)) return true;
+  const botAddress = getBotAddress(name);
+  if (!botAddress) return false;
+
+  return chain.some(
+    (c: any) => c.address.toLowerCase() == botAddress.toLowerCase()
+  );
+}
 const botAddresses = [
   { name: "earl", address: "0x840c601502C56087dA44A8176791d33f4b741aeC" },
   { name: "lili", address: "0xE1f36769cfBf168d18d37D5257825E1E272ba843" },

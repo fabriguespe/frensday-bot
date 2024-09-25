@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-console.log(__dirname);
+
 export async function handleAgent(
   context: HandlerContext,
   userPrompt: string,
@@ -18,38 +18,14 @@ export async function handleAgent(
   }
 
   const {
-    message: {
-      content: { content, params },
-      sender,
-    },
-    group,
+    message: { typeId },
   } = context;
 
   try {
     const { reply } = await textGeneration(userPrompt, getSystemPrompt(name));
-    const cleanedReply = reply
-      .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$2") // Keep URL instead of link text
-      .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
-      .replace(/`([^`]+)`/g, "$1"); // Remove inline code
-    if (cleanedReply.startsWith("/")) await context.intent(cleanedReply);
-    else await context.send(cleanedReply);
-
-    /*
-    if (reply.includes("[")) {
-      let splitMessages = JSON.parse(reply);
-      for (const message of splitMessages) {
-        let msg = message as string;
-        msg
-          .replace(/(\*\*|__)(.*?)\1/g, "$2") // Remove bold
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Remove links
-          .replace(/^#+\s*(.*)$/gm, "$1") // Remove titles
-          .replace(/`([^`]+)`/g, "$1"); // Remove inline code
-        if (msg.startsWith("/")) await context.intent(msg);
-        else await context.send(msg);
-      }
-    } else {
-    }*/
+    if (reply.startsWith("/")) await context.intent(reply);
+    else if (typeId === "reply") await context.reply(reply);
+    else await context.send(reply);
   } catch (error) {
     console.error("Error during OpenAI call:", error);
     await context.reply(
@@ -60,7 +36,7 @@ export async function handleAgent(
 
 function getSystemPrompt(name: string) {
   const language =
-    "### Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.";
+    "### Language\n Keep it simple and short. \nAlways answer in first person. \nNever mention users\nBe aware of your timezone and sleep needs.\nDont use markdown.\n If you are not sure about something, ask the user to clarify.\nOnly restrict to answer questions you know about from the docs.\nNever use speakrs names about info if not excplitly in the docs.";
   const experiences =
     "### Experiences:\nWordle Game: https://framedl.xyz. Only send the game url when asked.\n\n ENS Domain Registration and Checking Tool: https://ens.steer.fun/. Only send the tool url when asked.\n\n ";
   /* const returnMessage =
@@ -74,13 +50,11 @@ function getSystemPrompt(name: string) {
     timeZone: bangkokTimezone,
   });
   const timeInfo = `# Current Time\nCurrent time in Bangkok: ${currentTime}\n\n`;
-  console.log(__dirname, `../../src/characters/${name}.md`);
   const filePath = path.resolve(__dirname, `../../src/characters/${name}.md`);
   const speakersFilePath = path.resolve(
     __dirname,
     "../../src/data/speakers.md"
   );
-  console.log(filePath);
   const character = fs.readFileSync(filePath, "utf8");
   const speakers = fs.readFileSync(speakersFilePath, "utf8");
 

@@ -23,7 +23,6 @@ export async function startCron(
   redisClient: RedisClientType,
   v2client: Client
 ) {
-  console.log("Starting cron job to send upcoming speaker events");
   const conversations = await v2client.conversations.list();
   // Ensure speakers file exists or create it for the first time
   try {
@@ -50,7 +49,6 @@ export async function startCron(
       for (const address of keys) {
         const subscriptionStatus = await redisClient.get(address);
         if (subscriptionStatus === "subscribed") {
-          console.log(`Sending speaker updates to ${address}`);
           const targetConversation = conversations.find(
             (conv) => conv.peerAddress === address
           );
