@@ -3,7 +3,7 @@ import type { CommandGroup } from "@xmtp/message-kit";
 export const commands: CommandGroup[] = [
   {
     name: "Speakers",
-    icon: "🎤",
+    triggers: ["/speakers", "@earl", "@bittu", "@lili", "@peanut", "@kuzco"],
     description: "Get information about speakers.",
     commands: [
       {
@@ -15,7 +15,7 @@ export const commands: CommandGroup[] = [
   },
   {
     name: "Schedule",
-    icon: "📅",
+    triggers: ["/schedule"],
     description: "Get the event schedule.",
     commands: [
       {
@@ -27,7 +27,7 @@ export const commands: CommandGroup[] = [
   },
   {
     name: "Food",
-    icon: "🍔",
+    triggers: ["/food"],
     description: "Get details about food and beverages.",
     commands: [
       {
@@ -39,7 +39,7 @@ export const commands: CommandGroup[] = [
   },
   {
     name: "Games",
-    icon: "🎮",
+    triggers: ["/games"],
     description: "Get information about games and activities.",
     commands: [
       {
@@ -51,7 +51,7 @@ export const commands: CommandGroup[] = [
   },
   {
     name: "Tech",
-    icon: "💻",
+    triggers: ["/tech"],
     description: "Get information about technical topics.",
     commands: [
       {
